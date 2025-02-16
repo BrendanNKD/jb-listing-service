@@ -2,7 +2,8 @@
   "name": "jobboard",
   "module": "index.ts",
   "scripts": {
-    "start": "bun run index.ts"
+    "start": "bun run index.ts",
+    "build": "bun build index.ts --outdir dist"
   },
   "devDependencies": {
     "@types/bun": "latest",

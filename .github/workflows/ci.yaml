@@ -1,4 +1,4 @@
-name: CI Test and Build Workflow
+name: CI Test, Build, and Security Workflow
 
 on:
   pull_request:
@@ -8,45 +8,99 @@ on:
       - breaking/**
       - main
 
+permissions:
+  contents: write
+  security-events: write  # Required for SARIF upload
+  pull-requests: read  # Required for scanning PR commits
+
 jobs:
-  test_and_build:
+  test_build_security:
     runs-on: ubuntu-latest
+    env:
+      APP_PORT: ${{ secrets.APP_PORT }}
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      # --- Install Bun ---
       - name: Install Bun
         run: |
           curl -fsSL https://bun.sh/install | bash
           echo "/home/runner/.bun/bin" >> $GITHUB_PATH
 
+      # --- Install Dependencies ---
       - name: Install Dependencies
         run: bun install
 
-      # Step 1: Run Unit Tests
+      # --- SECRET SCANNING (Gitleaks) ---
+      - name: Run Gitleaks Secret Scanning
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      # --- SECURITY SCANNING (Snyk) ---
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --sarif-file-output=snyk.sarif
+
+      # --- UPLOAD SARIF RESULTS TO GITHUB SECURITY ---
+      - name: Upload Snyk results to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk.sarif
+
+      # --- UNIT TESTING ---
       - name: Run Unit Tests
         run: bun test
 
-      # Step 2: Build the Backend Service
+      # --- BUILD BACKEND SERVICE ---
       - name: Build Backend Service
         run: bun build index.ts --outdir dist --target node
 
-      # Step 3: Run Built Service in the Background
+      # --- INSTALL TRIVY ---
+      - name: Install Trivy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget
+          wget -qO- https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo tee /etc/apt/trusted.gpg.d/trivy.asc
+          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install -y trivy
+
+      # --- CONTAINER SCANNING (Trivy) ---
+      - name: Build and Scan Docker Image
+        run: |
+          docker build -t bun-app .
+          trivy image --exit-code 0 --severity HIGH,CRITICAL bun-app
+
+      # --- DEBUG ENVIRONMENT VARIABLES ---
+      - name: Debug Environment Variables
+        run: env | grep APP_PORT
+
+      # --- RUN BACKEND SERVICE ---
       - name: Run Built Service
+        env:
+          APP_PORT: ${{ secrets.APP_PORT }}
         run: |
-          echo "Starting the backend service..."
+          echo "Starting the backend service on port $APP_PORT..."
           bun run dist/index.js &
-          sleep 5  # Wait for service startup
+          sleep 5
 
-      # Step 4: Health Check
+      # --- HEALTH CHECK ---
       - name: Health Check
+        env:
+          APP_PORT: ${{ secrets.APP_PORT }}
         run: |
-          echo "Checking service health..."
-          curl --fail http://localhost:3000/health || (echo "Health check failed!" && exit 1)
+          echo "Checking service health on port $APP_PORT..."
+          curl --fail http://localhost:$APP_PORT/health || (echo "Health check failed!" && exit 1)
 
-      # Step 5: Cleanup Build Directory
+      # --- CLEANUP BUILD DIRECTORY ---
       - name: Cleanup Build Directory
         if: ${{ success() }}
-        run: |
-          echo "Cleaning up build artifacts..."
-          rm -rf dist
+        run: rm -rf dist

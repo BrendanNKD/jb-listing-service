@@ -1,0 +1,52 @@
+name: CI Test and Build Workflow
+
+on:
+  pull_request:
+    branches:
+      - feat/**
+      - fix/**
+      - breaking/**
+      - main
+
+jobs:
+  test_and_build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Install Bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "/home/runner/.bun/bin" >> $GITHUB_PATH
+
+      - name: Install Dependencies
+        run: bun install
+
+      # Step 1: Run Unit Tests
+      - name: Run Unit Tests
+        run: bun test
+
+      # Step 2: Build the Backend Service
+      - name: Build Backend Service
+        run: bun build index.ts --outdir dist --target node
+
+      # Step 3: Run Built Service in the Background
+      - name: Run Built Service
+        run: |
+          echo "Starting the backend service..."
+          bun run dist/index.js &
+          sleep 5  # Wait for service startup
+
+      # Step 4: Health Check
+      - name: Health Check
+        run: |
+          echo "Checking service health..."
+          curl --fail http://localhost:3000/health || (echo "Health check failed!" && exit 1)
+
+      # Step 5: Cleanup Build Directory
+      - name: Cleanup Build Directory
+        if: ${{ success() }}
+        run: |
+          echo "Cleaning up build artifacts..."
+          rm -rf dist

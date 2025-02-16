@@ -23,8 +23,9 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Ensures full commit history
-          ref: ${{ github.event.pull_request.head.sha }}  # Ensures correct PR commit is checked out
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.base.sha }}
+
 
       # --- Install Bun ---
       - name: Install Bun

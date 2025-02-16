@@ -26,7 +26,6 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.base.sha }}
 
-
       # --- Install Bun ---
       - name: Install Bun
         run: |
@@ -55,12 +54,17 @@ jobs:
 
       # --- UPLOAD SARIF RESULTS AS ARTIFACT ---
       - name: Upload Snyk SARIF as Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: snyk-security-scan
           path: snyk.sarif
           retention-days: 7  # Store for 7 days (adjust as needed)
 
+      # --- UPLOAD SARIF RESULTS TO GITHUB SECURITY ---
+      - name: Upload Snyk results to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk.sarif
 
       # --- UNIT TESTING ---
       - name: Run Unit Tests

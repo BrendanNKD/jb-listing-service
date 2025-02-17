@@ -10,7 +10,7 @@ on:
 
 permissions:
   contents: write
-  security-events: write  # Required for SARIF upload
+  security-events: write  # Required for SARIF uploading
   pull-requests: read  # Required for scanning PR commits
 
 jobs:

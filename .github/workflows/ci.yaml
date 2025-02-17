@@ -72,7 +72,7 @@ jobs:
 
       # --- BUILD BACKEND SERVICE ---
       - name: Build Backend Service
-        run: bun build index.ts --outdir dist --target node
+        run: bun build server.ts --outdir dist --target node
 
       # --- INSTALL TRIVY ---
       - name: Install Trivy
@@ -100,7 +100,7 @@ jobs:
           APP_PORT: ${{ secrets.APP_PORT }}
         run: |
           echo "Starting the backend service on port $APP_PORT..."
-          bun run dist/index.js &
+          bun run dist/server.js &
           sleep 5
 
       # --- HEALTH CHECK ---

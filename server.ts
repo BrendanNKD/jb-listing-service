@@ -3,56 +3,59 @@ import { connectDB } from "./src/database/mongo";
 import { jobListingRoutes } from "./src/routes/jobListingRoutes";
 import { healthRoutes } from "./src/routes/healthRoutes";
 
-new Elysia()
-  .guard(
-    {
-      // The guard checks the session cookie before handling the request.
-      async beforeHandle({ set, headers, request, error }) {
-        console.log("Requested URL:", request.url);
-        // Extract the Bearer token from the Authorization header (case-insensitive)
-        const authHeader = headers["Authorization"] || headers["authorization"];
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
-          return error(401, "Missing or invalid token");
+const app = new Elysia();
+
+// Register the health routes without protection.
+healthRoutes(app);
+
+// Apply guard only for the job listing routes.
+app.guard(
+  {
+    // The guard checks the session cookie before handling the request.
+    async beforeHandle({ headers, request, error }) {
+      console.log("Requested URL:", request.url);
+      // Extract the Bearer token from the Authorization header (case-insensitive)
+      const authHeader = headers["Authorization"] || headers["authorization"];
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return error(401, "Missing or invalid token");
+      }
+
+      // Remove the "Bearer " prefix to get the token
+      const token = authHeader.substring("Bearer ".length);
+
+      try {
+        // Call your authentication endpoint (which returns JSON with properties: valid, message, username, role)
+        const res = await fetch("http://localhost:8080/authenticate", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          return error(res.status);
         }
 
-        // Remove the "Bearer " prefix to get the token
-        const token = authHeader.substring("Bearer ".length);
+        const authData = await res.json();
 
-        try {
-          // Call your authentication endpoint (which returns JSON with properties: valid, message, username, role)
-          const res = await fetch("http://localhost:8080/authenticate", {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`,
-            },
-          });
-
-          if (!res.ok) {
-            return error(401, "Invalid token");
-          }
-
-          const authData = await res.json();
-
-          if (!authData.valid) {
-            return error(401, authData.message);
-          }
-
-        } catch (err) {
-          return error(500, "Error verifying token");
+        if (!authData.valid) {
+          return error(401, authData.message);
         }
-      },
+      } catch (err) {
+        return error(500, "Error verifying token");
+      }
     },
-    (app) => {
-      // You can also register additional groups of routes.
-      jobListingRoutes(app as unknown as Elysia<any>);
-      healthRoutes(app as unknown as Elysia<any>);
-      return app;
-    }
-  )
-  .listen(3000, () => {
-    console.log("Server running on http://localhost:3000");
-  });
+  },
+  (guardedApp) => {
+    // Only job listing routes are protected by this guard.
+    jobListingRoutes(guardedApp as unknown as Elysia<any>);
+    return guardedApp;
+  }
+);
 
-// Connect to the database before handling requests.
+app.listen(3000, () => {
+  console.log("Server running on http://localhost:3000");
+});
+
 await connectDB();

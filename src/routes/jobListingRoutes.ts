@@ -92,7 +92,6 @@ export const jobListingRoutes = (app: Elysia) => {
     // Build a dynamic filter from query parameters. If none are provided,
     // the filter object remains empty and returns all listings.
     const filter: Record<string, any> = {};
-    console.log(query)
     if (query.title) {
       filter.title = { $regex: query.title, $options: "i" };
     }

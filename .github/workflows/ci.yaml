@@ -23,8 +23,8 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v1
         with:
-          fetch-depth: 0  # Ensures full commit history
-          ref: ${{ github.event.pull_request.head.sha }}  # Ensures correct PR commit is checked out
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.base.sha }}
 
       # --- Install Bun ---
       - name: Install Bun
@@ -36,13 +36,14 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
-      # --- SECRET SCANNING (Fixed Gitleaks) ---
+      # --- SECRET SCANNING (Gitleaks) ---
       - name: Run Gitleaks Secret Scanning
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: true  # Prevents workflow failure if secrets are found
+        continue-on-error: true
 
+      # --- SECURITY SCANNING (Snyk) --
       - name: Run Snyk to check for vulnerabilities
         uses: snyk/actions/node@master
         continue-on-error: true
@@ -50,6 +51,14 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           args: --sarif-file-output=snyk.sarif
+
+      # --- UPLOAD SARIF RESULTS AS ARTIFACT ---
+      - name: Upload Snyk SARIF as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-security-scan
+          path: snyk.sarif
+          retention-days: 7  # Store for 7 days (adjust as needed)
 
       # --- UPLOAD SARIF RESULTS TO GITHUB SECURITY ---
       - name: Upload Snyk results to GitHub Code Scanning
@@ -81,8 +90,14 @@ jobs:
           docker build -t bun-app .
           trivy image --exit-code 0 --severity HIGH,CRITICAL bun-app
 
+      # --- DEBUG ENVIRONMENT VARIABLES --
+      - name: Debug Environment Variables
+        run: env | grep APP_PORT
+
       # --- RUN BACKEND SERVICE ---
       - name: Run Built Service
+        env:
+          APP_PORT: ${{ secrets.APP_PORT }}
         run: |
           echo "Starting the backend service on port $APP_PORT..."
           bun run dist/server.js &
@@ -90,6 +105,8 @@ jobs:
 
       # --- HEALTH CHECK ---
       - name: Health Check
+        env:
+          APP_PORT: ${{ secrets.APP_PORT }}
         run: |
           echo "Checking service health on port $APP_PORT..."
           curl --fail http://localhost:${{ env.APP_PORT }}/health || (echo "Health check failed!" && exit 1)

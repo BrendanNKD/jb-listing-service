@@ -81,10 +81,6 @@ jobs:
           docker build -t bun-app .
           trivy image --exit-code 0 --severity HIGH,CRITICAL bun-app
 
-      # --- DEBUG ENVIRONMENT VARIABLES --
-      - name: Debug Environment Variables
-        run: env | grep APP_PORT
-
       # --- RUN BACKEND SERVICE ---
       - name: Run Built Service
         run: |

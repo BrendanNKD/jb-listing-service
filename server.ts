@@ -6,7 +6,7 @@ import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-sec
 import dotenv from 'dotenv';
 
 const APP_ENV = process.env.APP_ENV || 'dev';
-
+const APP_PORT = process.env.APP_PORT || 3000
 // In development, load local variables from .env
 if (APP_ENV === 'dev') {
   dotenv.config();
@@ -87,7 +87,7 @@ async function startServer() {
     }
   );
 
-  app.listen(3000, () => {
+  app.listen(APP_PORT, () => {
     console.log("Server running on http://localhost:3000");
   });
 

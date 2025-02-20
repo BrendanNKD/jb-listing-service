@@ -29,6 +29,7 @@ async function loadProdSecrets() {
     throw new Error("No secret string returned from AWS Secrets Manager.");
   }
   const secret = JSON.parse(response.SecretString);
+  console.log(secret)
   // Replace environment variables with the secret values.
   process.env.MONGO_USERNAME = secret.MONGO_USERNAME;
   process.env.MONGO_PASSWORD = secret.MONGO_PASSWORD;
@@ -38,6 +39,7 @@ async function loadProdSecrets() {
 
 async function startServer() {
   // For production, load secrets from AWS before starting the server.
+  console.log("Environment:" + APP_ENV)
   if (APP_ENV === 'prod') {
     await loadProdSecrets();
   }

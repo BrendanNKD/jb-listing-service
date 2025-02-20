@@ -18,12 +18,9 @@ if (APP_ENV === 'dev') {
  * MONGO_USERNAME, MONGO_PASSWORD, MONGO_HOST, and MONGO_DB.
  */
 async function loadProdSecrets() {
-  const secretId = process.env.SECRET_ID;
-  if (!secretId) {
-    throw new Error("Missing SECRET_ID for AWS Secrets Manager.");
-  }
+
   const client = new SecretsManagerClient({ region: process.env.AWS_REGION || "us-east-1" });
-  const command = new GetSecretValueCommand({ SecretId: secretId });
+  const command = new GetSecretValueCommand({ SecretId: 'prod/mongo' });
   const response = await client.send(command);
   if (!response.SecretString) {
     throw new Error("No secret string returned from AWS Secrets Manager.");

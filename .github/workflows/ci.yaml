@@ -10,7 +10,7 @@ on:
 
 permissions:
   contents: write
-  security-events: write  # Required for SARIF uploading
+  security-events: write  # Required for SARIF upload
   pull-requests: read  # Required for scanning PR commits
 
 jobs:
@@ -18,6 +18,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       APP_PORT: ${{ secrets.APP_PORT }}
+      APP_ENV: ${{ secrets.APP_ENV }}
+      MONGO_USERNAME: ${{ secrets.MONGO_USERNAME }}
+      MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+      MONGO_HOST: ${{ secrets.MONGO_HOST }}
+      MONGO_DB: ${{ secrets.MONGO_DB }}
 
     steps:
       - name: Checkout Repository
@@ -90,10 +95,6 @@ jobs:
           docker build -t bun-app .
           trivy image --exit-code 0 --severity HIGH,CRITICAL bun-app
 
-      # --- DEBUG ENVIRONMENT VARIABLES --
-      - name: Debug Environment Variables
-        run: env | grep APP_PORT
-
       # --- RUN BACKEND SERVICE ---
       - name: Run Built Service
         env:
@@ -105,11 +106,9 @@ jobs:
 
       # --- HEALTH CHECK ---
       - name: Health Check
-        env:
-          APP_PORT: ${{ secrets.APP_PORT }}
         run: |
           echo "Checking service health on port $APP_PORT..."
-          curl --fail http://localhost:$APP_PORT/health || (echo "Health check failed!" && exit 1)
+          curl --fail http://localhost:${{ env.APP_PORT }}/health || (echo "Health check failed!" && exit 1)
 
       # --- CLEANUP BUILD DIRECTORY ---
       - name: Cleanup Build Directory

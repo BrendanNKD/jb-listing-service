@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       APP_PORT: ${{ secrets.APP_PORT }}
+      APP_ENV: ${{ secrets.APP_ENV }}
 
     steps:
       - name: Checkout Repository
@@ -90,14 +91,8 @@ jobs:
           docker build -t bun-app .
           trivy image --exit-code 0 --severity HIGH,CRITICAL bun-app
 
-      # --- DEBUG ENVIRONMENT VARIABLES --
-      - name: Debug Environment Variables
-        run: env | grep APP_PORT
-
       # --- RUN BACKEND SERVICE ---
       - name: Run Built Service
-        env:
-          APP_PORT: ${{ secrets.APP_PORT }}
         run: |
           echo "Starting the backend service on port $APP_PORT..."
           bun run dist/server.js &
@@ -105,12 +100,10 @@ jobs:
 
       # --- HEALTH CHECK ---
       - name: Health Check
-        env:
-          APP_PORT: ${{ secrets.APP_PORT }}
         run: |
           echo "Checking service health on port $APP_PORT..."
           curl --fail http://localhost:$APP_PORT/health || (echo "Health check failed!" && exit 1)
-
+ 
       # --- CLEANUP BUILD DIRECTORY ---
       - name: Cleanup Build Directory
         if: ${{ success() }}

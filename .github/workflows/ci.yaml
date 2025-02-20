@@ -90,10 +90,6 @@ jobs:
           docker build -t bun-app .
           trivy image --exit-code 0 --severity HIGH,CRITICAL bun-app
 
-      # --- DEBUG ENVIRONMENT VARIABLES --
-      - name: Debug Environment Variables
-        run: env | grep APP_PORT
-
       # --- RUN BACKEND SERVICE ---
       - name: Run Built Service
         env:
@@ -105,8 +101,6 @@ jobs:
 
       # --- HEALTH CHECK ---
       - name: Health Check
-        env:
-          APP_PORT: ${{ secrets.APP_PORT }}
         run: |
           echo "Checking service health on port $APP_PORT..."
           curl --fail http://localhost:3000/health || (echo "Health check failed!" && exit 1)

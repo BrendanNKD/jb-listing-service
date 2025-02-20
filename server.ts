@@ -19,7 +19,7 @@ if (APP_ENV === 'dev') {
  */
 async function loadProdSecrets() {
 
-  const client = new SecretsManagerClient({ region: process.env.AWS_REGION || "us-east-1" });
+  const client = new SecretsManagerClient({ region: process.env.AWS_REGION || "ap-southeast-1" });
   const command = new GetSecretValueCommand({ SecretId: 'prod/mongo' });
   const response = await client.send(command);
   if (!response.SecretString) {

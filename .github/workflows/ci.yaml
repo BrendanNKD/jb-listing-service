@@ -77,7 +77,7 @@ jobs:
 
       # --- BUILD BACKEND SERVICE ---
       - name: Build Backend Service
-        run: bun build server.ts --outdir dist --target node
+        run: bun build server.ts --target=node --outdir dist
 
       # --- INSTALL TRIVY ---
       - name: Install Trivy

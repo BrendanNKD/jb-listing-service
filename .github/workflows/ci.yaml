@@ -18,6 +18,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       APP_PORT: ${{ secrets.APP_PORT }}
+      APP_ENV: ${{ secrets.APP_ENV }}
+      MONGO_USERNAME: ${{ secrets.MONGO_USERNAME }}
+      MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+      MONGO_HOST: ${{ secrets.MONGO_HOST }}
+      MONGO_DB: ${{ secrets.MONGO_DB }}
 
     steps:
       - name: Checkout Repository
@@ -103,7 +108,7 @@ jobs:
       - name: Health Check
         run: |
           echo "Checking service health on port $APP_PORT..."
-          curl --fail http://localhost:3000/health || (echo "Health check failed!" && exit 1)
+          curl --fail http://localhost:${{ env.APP_PORT }}/health || (echo "Health check failed!" && exit 1)
 
       # --- CLEANUP BUILD DIRECTORY ---
       - name: Cleanup Build Directory

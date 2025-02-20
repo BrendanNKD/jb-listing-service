@@ -3,6 +3,7 @@ import { connectDB } from "./src/database/mongo";
 import { jobListingRoutes } from "./src/routes/jobListingRoutes";
 import { healthRoutes } from "./src/routes/healthRoutes";
 import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
+import { defaultProvider } from "@aws-sdk/credential-provider-node";
 import dotenv from 'dotenv';
 
 const APP_ENV = process.env.APP_ENV || 'dev';
@@ -19,7 +20,7 @@ if (APP_ENV === 'dev') {
  */
 async function loadProdSecrets() {
 
-  const client = new SecretsManagerClient({ region: process.env.AWS_REGION || "ap-southeast-1" });
+  const client = new SecretsManagerClient({ region: process.env.AWS_REGION || "ap-southeast-1", credentials: defaultProvider() });
   const command = new GetSecretValueCommand({ SecretId: 'prod/mongo' });
   const response = await client.send(command);
   if (!response.SecretString) {

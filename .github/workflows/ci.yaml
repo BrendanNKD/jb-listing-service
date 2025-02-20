@@ -109,7 +109,7 @@ jobs:
           APP_PORT: ${{ secrets.APP_PORT }}
         run: |
           echo "Checking service health on port $APP_PORT..."
-          curl --fail http://localhost:${{ env.APP_PORT }}/health || (echo "Health check failed!" && exit 1)
+          curl --fail http://localhost:3000/health || (echo "Health check failed!" && exit 1)
 
       # --- CLEANUP BUILD DIRECTORY ---
       - name: Cleanup Build Directory

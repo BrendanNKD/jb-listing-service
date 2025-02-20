@@ -65,7 +65,7 @@ jobs:
       # --- UPDATE ECS TASK DEFINITION FOR `joblist` ---
       - name: Get Current Task Definition 
         run: |
-          aws ecs describe-task-definition --task-definition ecs-uat-jb-service-td \
+          aws ecs describe-task-definition --task-definition ecs-uat-jb-listing-service-td \
             --query 'taskDefinition' > joblist-task-definition.json
 
       - name: Update Task Definition 
@@ -83,4 +83,4 @@ jobs:
 
       - name: Update ECS Service 
         run: |
-          aws ecs update-service --cluster uat-ecs --service uat-jb-service --force-new-deployment --task-definition $NEW_JOBLIST_TASK_DEF_ARN
+          aws ecs update-service --cluster uat-ecs --service uat-jb-listing-service --force-new-deployment --task-definition $NEW_JOBLIST_TASK_DEF_ARN

@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const uri: string =
-  "mongodb+srv://testuser:testuser@cluster0.qgusyn0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+    "mongodb+srv://testuser:testuser@cluster0.qgusyn0.mongodb.net/jobboard?retryWrites=true&w=majority&appName=Cluster0";
 
 // Explicitly type options as mongoose.ConnectOptions so that the literal "1" is inferred correctly.
 const clientOptions: mongoose.ConnectOptions = {

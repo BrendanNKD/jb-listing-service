@@ -3,14 +3,8 @@ import { connectDB } from "./src/database/mongo";
 import { jobListingRoutes } from "./src/routes/jobListingRoutes";
 import { healthRoutes } from "./src/routes/healthRoutes";
 import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
+import { defaultProvider } from "@aws-sdk/credential-provider-node";
 import dotenv from 'dotenv';
-
-const APP_ENV = process.env.APP_ENV || 'dev';
-const APP_PORT = process.env.APP_PORT || 3000
-// In development, load local variables from .env
-if (APP_ENV === 'dev') {
-  dotenv.config();
-}
 
 /**
  * Loads production secrets from AWS Secrets Manager.
@@ -19,14 +13,13 @@ if (APP_ENV === 'dev') {
  */
 async function loadProdSecrets() {
 
-  const client = new SecretsManagerClient({ region: process.env.AWS_REGION || "ap-southeast-1" });
+  const client = new SecretsManagerClient({ region: process.env.AWS_REGION || "ap-southeast-1", credentials: defaultProvider() });
   const command = new GetSecretValueCommand({ SecretId: 'prod/mongo' });
   const response = await client.send(command);
   if (!response.SecretString) {
     throw new Error("No secret string returned from AWS Secrets Manager.");
   }
   const secret = JSON.parse(response.SecretString);
-  console.log(secret)
   // Replace environment variables with the secret values.
   process.env.MONGO_USERNAME = secret.MONGO_USERNAME;
   process.env.MONGO_PASSWORD = secret.MONGO_PASSWORD;
@@ -35,6 +28,14 @@ async function loadProdSecrets() {
 }
 
 async function startServer() {
+
+  const APP_ENV = process.env.APP_ENV || 'dev';
+  const APP_PORT = process.env.APP_PORT || 3000
+  // In development, load local variables from .env
+  if (APP_ENV === 'dev') {
+    await dotenv.config();
+  }
+
   // For production, load secrets from AWS before starting the server.
   console.log("Environment:" + APP_ENV)
   if (APP_ENV === 'prod') {

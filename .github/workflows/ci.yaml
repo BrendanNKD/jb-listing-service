@@ -23,8 +23,8 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v1
         with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0  # Ensures full commit history
+          ref: ${{ github.event.pull_request.head.sha }}  # Ensures correct PR commit is checked out
 
       # --- Install Bun ---
       - name: Install Bun
@@ -36,29 +36,20 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
-      # --- SECRET SCANNING (Gitleaks) ---
+      # --- SECRET SCANNING (Fixed Gitleaks) ---
       - name: Run Gitleaks Secret Scanning
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: true
+        continue-on-error: true  # Prevents workflow failure if secrets are found
 
-      # --- SECURITY SCANNING (Snyk) --
       - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/node@master
+        uses: snyk/actions/golang@master
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           args: --sarif-file-output=snyk.sarif
-
-      # --- UPLOAD SARIF RESULTS AS ARTIFACT ---
-      - name: Upload Snyk SARIF as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: snyk-security-scan
-          path: snyk.sarif
-          retention-days: 7  # Store for 7 days (adjust as needed)
 
       # --- UPLOAD SARIF RESULTS TO GITHUB SECURITY ---
       - name: Upload Snyk results to GitHub Code Scanning

@@ -44,7 +44,7 @@ jobs:
         continue-on-error: true  # Prevents workflow failure if secrets are found
 
       - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/golang@master
+        uses: snyk/actions/node@master
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
@@ -87,8 +87,6 @@ jobs:
 
       # --- RUN BACKEND SERVICE ---
       - name: Run Built Service
-        env:
-          APP_PORT: ${{ secrets.APP_PORT }}
         run: |
           echo "Starting the backend service on port $APP_PORT..."
           bun run dist/server.js &
@@ -96,8 +94,6 @@ jobs:
 
       # --- HEALTH CHECK ---
       - name: Health Check
-        env:
-          APP_PORT: ${{ secrets.APP_PORT }}
         run: |
           echo "Checking service health on port $APP_PORT..."
           curl --fail http://localhost:${{ env.APP_PORT }}/health || (echo "Health check failed!" && exit 1)

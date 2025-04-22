@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema } from "mongoose";
+import mongoose, { Document, Schema, Types } from "mongoose";
 
 export interface IJobListing extends Document {
   title: string;
@@ -7,6 +7,8 @@ export interface IJobListing extends Document {
   description: string;
   salary?: number;
   jobType: "Full-time" | "Part-time" | "Contract" | "Internship";
+  createdBy: string;
+  updatedBy?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,6 +37,14 @@ const jobListingSchema: Schema<IJobListing> = new Schema({
     type: String,
     enum: ["Full-time", "Part-time", "Contract", "Internship"],
     default: "Full-time",
+  },
+  createdBy: {
+    type: String,
+    required: true,
+  },
+  updatedBy: {
+    type: String,
+    default : ""
   },
   createdAt: {
     type: Date,

@@ -25,8 +25,9 @@ export const jobListingRoutes = (app: Elysia) => {
   });
 
   // CREATE a new job listing
-  app.post("/v1/api/", async ({ request }) => {
+  app.post("/v1/api/", async ({ request, store }) => {
     const payload = await request.json();
+    payload.createdBy = (store as any).username;
     const result = await createJobListing(payload);
     if (!result.success) {
       return new Response(JSON.stringify({ error: result.error }), {
@@ -55,8 +56,49 @@ export const jobListingRoutes = (app: Elysia) => {
     });
   });
 
+  // In your routes file (jobListingRoutes.ts, etc.)
+
+// GET all job listings created by a specific user
+app.get("/v1/api/created/", async ({ store }) => {
+
+  // Check if the user has the "employer" role
+  if ((store as any).role !== "employer") {
+    return new Response(JSON.stringify({ error: "Not authorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const username = (store as any).username
+  try {
+    // Query by "createdBy" field
+    const listings = await JobListing.find({ createdBy: username });
+
+    // Return the array of listings
+    return new Response(JSON.stringify(listings), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error: any) {
+    // Handle errors
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+});
+
+
   // UPDATE a job listing by ID
-  app.put("/v1/api/:id", async ({ params: { id }, request }) => { 
+  app.put("/v1/api/:id", async ({ params: { id }, request ,store}) => { 
+      // Check if the user has the "employer" role
+  if ((store as any).role !== "employer") {
+    return new Response(JSON.stringify({ error: "Not authorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
     const payload = await request.json();
     const result = await updateJobListing(id, payload);
     if (!result.success) {

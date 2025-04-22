@@ -5,6 +5,7 @@ import { healthRoutes } from "./src/routes/healthRoutes";
 import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
 import { defaultProvider } from "@aws-sdk/credential-provider-node";
 import dotenv from 'dotenv';
+import { commonRoutes } from "./src/routes/commonRoutes";
 
 /**
  * Loads production secrets from AWS Secrets Manager.
@@ -44,14 +45,14 @@ async function startServer() {
 
   const app = new Elysia();
 
+  app.state({username: "", role: ""})
   // Register the health routes without protection.
   healthRoutes(app);
 
   // Apply guard only for the job listing routes.
   app.guard(
     {
-      async beforeHandle({ headers, request, error }) {
-        console.log("Requested URL:", request.url);
+      async beforeHandle({ headers, request, error , store }) {
         // Extract the Bearer token from the Authorization header (case-insensitive)
         const authHeader = headers["Authorization"] || headers["authorization"];
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -68,6 +69,7 @@ async function startServer() {
               "Authorization": `Bearer ${token}`,
             },
           });
+          
           if (!res.ok) {
             return error(res.status);
           }
@@ -75,6 +77,13 @@ async function startServer() {
           if (!authData.valid) {
             return error(401, authData.message);
           }
+
+          console.log(authData);
+
+          (store as any).username = authData.username;
+          (store as any).role = authData.role;
+
+
         } catch (err) {
           return error(500, "Error verifying token");
         }
@@ -82,6 +91,7 @@ async function startServer() {
     },
     (guardedApp) => {
       // Only job listing routes are protected by this guard.
+      commonRoutes(guardedApp as unknown as Elysia<any>);
       jobListingRoutes(guardedApp as unknown as Elysia<any>);
       return guardedApp;
     }

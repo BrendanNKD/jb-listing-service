@@ -6,6 +6,7 @@ import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-sec
 import { defaultProvider } from "@aws-sdk/credential-provider-node";
 import dotenv from 'dotenv';
 import { commonRoutes } from "./src/routes/commonRoutes";
+import cors from "@elysiajs/cors";
 
 /**
  * Loads production secrets from AWS Secrets Manager.
@@ -45,7 +46,16 @@ async function startServer() {
 
   const app = new Elysia();
 
-  app.state({username: "", role: ""})
+  app
+  .use(
+    cors({
+      origin: '*',                        // allow all origins
+      methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+      allowedHeaders: ['Content-Type','Authorization'], // allow your token header
+      credentials: false                  // default; no cookies or HTTP auth
+    })
+  )  
+  .state({username: "", role: ""})
   // Register the health routes without protection.
   healthRoutes(app);
 

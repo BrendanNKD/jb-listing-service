@@ -4,8 +4,10 @@ FROM oven/bun:latest AS builder
 # Set working directory inside the builder image
 WORKDIR /app
 
-# 0) install unzip so that bun upgrade can actually extract
-RUN apk update && apk add --no-cache unzip
+# 0) Install unzip so that bun upgrade can extract the canary archive
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends unzip \
+ && rm -rf /var/lib/apt/lists/*
 
 # 0) upgrade to canary
 RUN bun upgrade --canary

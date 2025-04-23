@@ -14,11 +14,25 @@ export const commonRoutes = (app: Elysia) => {
     });
   });
 
-  // 2) GET current availability zone via IMDSv2
+  // new /az route
   app.get("/v1/api/availability-zone", async () => {
     try {
-      const token = await fetchImdsToken();
-      const az    = await fetchMetadata("/placement/availability-zone", token);
+      let az: string;
+
+      // Fargate metadata v4
+      const ecsMetaUri = process.env.AWS_CONTAINER_METADATA_URI_V4;
+      console.log(ecsMetaUri)
+      if (ecsMetaUri) {
+        const res = await fetch(`${ecsMetaUri}/task`);
+        if (!res.ok) throw new Error(`ECS metadata error ${res.status}`);
+        const data = await res.json() as { AvailabilityZone?: string };
+        az = data.AvailabilityZone || "unknown";
+      } else {
+        // EC2 IMDS v2
+        const token = await fetchImdsToken();
+        az = await fetchMetadata(token, "placement/availability-zone");
+      }
+
       return new Response(
         JSON.stringify({ availabilityZone: az }),
         {
@@ -26,8 +40,8 @@ export const commonRoutes = (app: Elysia) => {
           headers: { "Content-Type": "application/json" },
         }
       );
-    } catch (err: any) {
-      console.error("Failed to get availability zone:", err);
+    } catch (err) {
+      console.error("Failed to fetch AZ:", err);
       return new Response(
         JSON.stringify({ error: "Could not determine availability zone" }),
         {

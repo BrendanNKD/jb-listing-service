@@ -14,42 +14,23 @@ export const commonRoutes = (app: Elysia) => {
     });
   });
 
-  // new /az route
-  app.get("/v1/api/availability-zone", async () => {
+  app.get('/v1/api/az', async () => {
     try {
-      let az: string;
-
-      // Fargate metadata v4
-      const ecsMetaUri = process.env.AWS_CONTAINER_METADATA_URI_V4;
-      console.log(ecsMetaUri)
-      if (ecsMetaUri) {
-        const res = await fetch(`${ecsMetaUri}/task`);
-        if (!res.ok) throw new Error(`ECS metadata error ${res.status}`);
-        const data = await res.json() as { AvailabilityZone?: string };
-        az = data.AvailabilityZone || "unknown";
-      } else {
-        // EC2 IMDS v2
-        const token = await fetchImdsToken();
-        az = await fetchMetadata(token, "placement/availability-zone");
-      }
-
+      const token = await fetchImdsToken()
+      const az = await fetchMetadata('/placement/availability-zone', token)
       return new Response(
         JSON.stringify({ availabilityZone: az }),
         {
           status: 200,
-          headers: { "Content-Type": "application/json" },
+          headers: { 'Content-Type': 'application/json' }
         }
-      );
-    } catch (err) {
-      console.error("Failed to fetch AZ:", err);
+      )
+    } catch (err: any) {
       return new Response(
-        JSON.stringify({ error: "Could not determine availability zone" }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+        JSON.stringify({ error: err.message }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      )
     }
-  });
+  })
 
 }

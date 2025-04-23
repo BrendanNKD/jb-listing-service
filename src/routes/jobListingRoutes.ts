@@ -42,7 +42,7 @@ export const jobListingRoutes = (app: Elysia) => {
   });
 
   // GET a job listing by ID
-  app.get("/v1/api/:id", async ({ params }) => {
+  app.get("/v1/api/job-listings/:id", async ({ params }) => {
     const result = await getJobListingById(params.id);
     if (!result.success) {
       return new Response(JSON.stringify({ error: result.error }), {

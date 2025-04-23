@@ -4,6 +4,9 @@ FROM oven/bun:latest AS builder
 # Set working directory inside the builder image
 WORKDIR /app
 
+# 0) install unzip so that bun upgrade can actually extract
+RUN apk update && apk add --no-cache unzip
+
 # 0) upgrade to canary
 RUN bun upgrade --canary
 

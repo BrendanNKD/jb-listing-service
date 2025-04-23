@@ -83,6 +83,12 @@ jobs:
           # 4. Any extra baseline.py flags (e.g. -a for alpha passive rules)
           cmd_options: '-a'
           # 5. Fail the step (true/false only)
+          cmd_options: >
+            -a      # include alpha passive rules
+            -I      # do not return failure on warnings
+            -r zap_report.html
+            -w report_md.md
+            -J report_json.json
           fail_action: true
 
       # --- UNIT TESTING ---

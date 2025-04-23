@@ -95,6 +95,7 @@ async function startServer() {
 
 
         } catch (err) {
+          console.log(err)
           return error(500, "Error verifying token");
         }
       },

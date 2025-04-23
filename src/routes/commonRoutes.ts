@@ -3,7 +3,7 @@ import { Roles } from "../models/roles";
 import { fetchImdsToken, fetchMetadata } from "../controllers/imdsToken";
 
 export const commonRoutes = (app: Elysia) => {
-      // GET roles array from the JobListing schema
+      // GET roles array from the JobListing schem
   app.get("/v1/api/roles", () => {
     // Access the enum values from the 'role' field in the schema.
     const roles =

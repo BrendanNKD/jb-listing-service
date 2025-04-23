@@ -69,7 +69,18 @@ jobs:
       - name: Upload Snyk results to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: snyk.sarif
+          sarif_file: snyk.sarif  
+
+      # --- OWASP ZAP BASLINE SCAN ---
+      - name: OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.6.1
+        continue-on-error: true             # don’t block the entire build on findings
+        with:
+          target: http://localhost:${{ env.APP_PORT }}
+          cmd_options: >
+            -v                                # verbose output
+            -r zap_report.html                # generate an HTML report
+          fail_on: HIGH                      # fail the step if any HIGH risk alerts
 
       # --- UNIT TESTING ---
       - name: Run Unit Tests

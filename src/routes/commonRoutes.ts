@@ -1,5 +1,6 @@
 import type Elysia from "elysia";
 import { Roles } from "../models/roles";
+import { fetchImdsToken, fetchMetadata } from "../controllers/imdsToken";
 
 export const commonRoutes = (app: Elysia) => {
       // GET roles array from the JobListing schema
@@ -12,4 +13,21 @@ export const commonRoutes = (app: Elysia) => {
       headers: { "Content-Type": "application/json" },
     });
   });
+
+  app.get("/v1/api/alb-zone", async () => {
+    try {
+      const token = await fetchImdsToken();
+      const az = await fetchMetadata("/latest/meta-data/placement/availability-zone", token);
+      return new Response(
+        JSON.stringify({ availabilityZone: az }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    } catch (err: any) {
+      return new Response(
+        JSON.stringify({ error: err.message || "Could not fetch availability zone" }),
+        { status: 502, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  });
+
 }

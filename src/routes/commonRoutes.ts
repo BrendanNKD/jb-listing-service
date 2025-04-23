@@ -14,21 +14,13 @@ export const commonRoutes = (app: Elysia) => {
     });
   });
 
-  // GET current availability zone
+  // 2) GET current availability zone via IMDSv2
   app.get("/v1/api/availability-zone", async () => {
     try {
-      // 1) fetch an IMDSv2 token
       const token = await fetchImdsToken();
-
-      // 2) query the AZ metadata
-      // the path here is the IMDS path for AZ
-      const az = await fetchMetadata(
-        "/latest/meta-data/placement/availability-zone",
-        token
-      );
-
+      const az    = await fetchMetadata("/placement/availability-zone", token);
       return new Response(
-        JSON.stringify({ availabilityZone: az.trim() }),
+        JSON.stringify({ availabilityZone: az }),
         {
           status: 200,
           headers: { "Content-Type": "application/json" },

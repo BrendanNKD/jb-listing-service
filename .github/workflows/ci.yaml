@@ -16,6 +16,7 @@ permissions:
 jobs:
   test_build_security:
     runs-on: ubuntu-latest
+    needs: security
     env:
       APP_PORT: ${{ secrets.APP_PORT }}
       APP_ENV: ${{ secrets.APP_ENV }}
@@ -26,7 +27,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.base.sha }}
@@ -71,10 +72,13 @@ jobs:
         with:
           sarif_file: snyk.sarif  
 
-      - name: ZAP Scan
-        uses: zaproxy/action-full-scan@v0.12.0
+      - name: Run OWASP ZAP scan
+        uses: zaproxy/action-baseline@v0.6.1
         with:
-          target: 'https://www.zaproxy.org/'
+          docker_name: 'owasp/zap2docker-stable'
+          target: http://localhost:${{ secrets.APP_PORT }}
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a'
 
       # --- UNIT TESTING ---
       - name: Run Unit Tests

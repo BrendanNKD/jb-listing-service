@@ -27,7 +27,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.base.sha }}
@@ -71,6 +71,14 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: snyk.sarif  
+
+      - name: Run OWASP ZAP scan
+        uses: zaproxy/action-baseline@v0.6.1
+        with:
+          docker_name: 'owasp/zap2docker-stable'
+          target: http://localhost:${{ secrets.APP_PORT }}
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a'
 
       # --- UNIT TESTING ---
       - name: Run Unit Tests

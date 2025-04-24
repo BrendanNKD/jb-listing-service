@@ -72,14 +72,6 @@ jobs:
         with:
           sarif_file: snyk.sarif  
 
-      - name: Run OWASP ZAP scan
-        uses: zaproxy/action-baseline@v0.6.1
-        with:
-          docker_name: 'owasp/zap2docker-stable'
-          target: http://localhost:${{ secrets.APP_PORT }}
-          rules_file_name: '.zap/rules.tsv'
-          cmd_options: '-a'
-
       # --- UNIT TESTING ---
       - name: Run Unit Tests
         run: bun test

@@ -12,6 +12,7 @@ permissions:
   contents: write
   security-events: write  # Required for SARIF upload
   pull-requests: read  # Required for scanning PR commits
+  issues: write     # specifically allow issue creation
 
 jobs:
   test_build_security:

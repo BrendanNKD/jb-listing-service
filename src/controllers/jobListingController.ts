@@ -1,4 +1,8 @@
+// controllers/jobListingController.ts
 import { JobListing, type IJobListing } from "../models/jobListing";
+import ControllerResultFactory from "../factories/ControllerResultFactory";
+import { JobListingSubject } from "../observers/jobListingSubject";
+// GET all job applications with resume transformed to include only the filename.
 
 interface ControllerResult {
   success: boolean;
@@ -7,13 +11,15 @@ interface ControllerResult {
   status?: number;
 }
 
+const jobListingSubject = JobListingSubject.getInstance();
+
 // GET all job listings
 export const getAllJobListings = async (): Promise<ControllerResult> => {
   try {
     const listings = await JobListing.find();
-    return { success: true, data: listings };
+    return ControllerResultFactory.success(listings);
   } catch (error: any) {
-    return { success: false, error: error.message };
+    return ControllerResultFactory.fromError(error);
   }
 };
 
@@ -24,9 +30,14 @@ export const createJobListing = async (
   try {
     const newJob = new JobListing(payload);
     const savedJob = await newJob.save();
-    return { success: true, data: savedJob };
+    
+    // Notify observers asynchronously without waiting
+    jobListingSubject.notifyJobListingCreated(savedJob)
+      .catch(error => console.error('Error notifying observers:', error));
+    
+    return ControllerResultFactory.success(savedJob, 201);
   } catch (error: any) {
-    return { success: false, error: error.message };
+    return ControllerResultFactory.fromError(error);
   }
 };
 
@@ -34,11 +45,10 @@ export const createJobListing = async (
 export const getJobListingById = async (id: string): Promise<ControllerResult> => {
   try {
     const job = await JobListing.findById(id);
-    if (!job)
-      return { success: false, error: "Job listing not found", status: 404 };
-    return { success: true, data: job };
+    if (!job) return ControllerResultFactory.notFound("Job listing not found");
+    return ControllerResultFactory.success(job);
   } catch (error: any) {
-    return { success: false, error: error.message };
+    return ControllerResultFactory.fromError(error);
   }
 };
 
@@ -49,12 +59,18 @@ export const updateJobListing = async (
 ): Promise<ControllerResult> => {
   try {
     payload.updatedAt = new Date();
-    const updatedJob = await JobListing.findByIdAndUpdate(id, payload, { new: true });
-    if (!updatedJob)
-      return { success: false, error: "Job listing not found", status: 404 };
-    return { success: true, data: updatedJob };
+    const updatedJob = await JobListing.findByIdAndUpdate(id, payload, { 
+      new: true 
+    });
+    if (!updatedJob) return ControllerResultFactory.notFound("Job listing not found");
+    
+    // Notify observers asynchronously
+    jobListingSubject.notifyJobListingUpdated(updatedJob)
+      .catch(error => console.error('Error notifying observers:', error));
+    
+    return ControllerResultFactory.success(updatedJob);
   } catch (error: any) {
-    return { success: false, error: error.message };
+    return ControllerResultFactory.fromError(error);
   }
 };
 
@@ -62,10 +78,16 @@ export const updateJobListing = async (
 export const deleteJobListing = async (id: string): Promise<ControllerResult> => {
   try {
     const deletedJob = await JobListing.findByIdAndDelete(id);
-    if (!deletedJob)
-      return { success: false, error: "Job listing not found", status: 404 };
-    return { success: true, data: { message: "Job listing deleted successfully" } };
+    if (!deletedJob) return ControllerResultFactory.notFound("Job listing not found");
+    
+    // Notify observers asynchronously
+    jobListingSubject.notifyJobListingDeleted(id)
+      .catch(error => console.error('Error notifying observers:', error));
+    
+    return ControllerResultFactory.success({ 
+      message: "Job listing deleted successfully" 
+    });
   } catch (error: any) {
-    return { success: false, error: error.message };
+    return ControllerResultFactory.fromError(error);
   }
 };

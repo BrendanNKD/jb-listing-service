@@ -40,7 +40,7 @@ async function loadProdSecrets() {
       throw new Error("prod/endpoints is missing AUTH_BASE_URL field.");
     }
     process.env.AUTH_BASE_URL = endpointsSecret.AUTH_BASE_URL;
-
+    console.log(process.env.AUTH_BASE_URL);
 }
 
 async function startServer() {

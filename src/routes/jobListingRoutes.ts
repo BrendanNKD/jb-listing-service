@@ -9,7 +9,7 @@ import {
 import { JobListing } from "../models/jobListing";
 
 export const jobListingRoutes = (app: Elysia) => {
-  // GET all job listings
+  // GET all job list
   app.get("/v1/api/", async () => {
     const result = await getAllJobListings();
     if (!result.success) {
